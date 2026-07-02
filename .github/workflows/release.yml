@@ -16,7 +16,9 @@ jobs:
       - name: Install build tooling
         run: |
           sudo apt-get update
-          sudo apt-get install -y debhelper devscripts
+          # python3-pip y python3-setuptools son Build-Depends de debian/control:
+          # sin ellos dpkg-checkbuilddeps aborta el build
+          sudo apt-get install -y debhelper devscripts python3-pip python3-setuptools
 
       - name: Link debian directory
         run: ln -sfn packaging/debian debian
