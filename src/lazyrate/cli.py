@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -15,15 +17,47 @@ from lazyrate.providers.base import today_caracas, validate_quote
 # El nombre público en la CLI es "binance"; internamente la fuente es "binance_p2p"
 _SOURCE_MAP = {"bcv": "bcv", "binance": "binance_p2p"}
 
-AUTOSTART_DESKTOP = """\
+def tui_command() -> list[str]:
+    """Comando para abrir la TUI desde otro proceso (p.ej. el indicador).
+
+    No depende del PATH del usuario: en desarrollo (venv) o pipx el script
+    'lazyrate' vive junto al intérprete en ejecución; instalado por .deb está
+    en /usr/bin (que también es hermano de /usr/bin/python3).
+    """
+    sibling = Path(sys.executable).with_name("lazyrate")
+    if sibling.is_file() and os.access(sibling, os.X_OK):
+        return [str(sibling)]
+    found = shutil.which("lazyrate")
+    if found:
+        return [found]
+    return [sys.executable, "-m", "lazyrate"]
+
+
+AUTOSTART_DESKTOP_TEMPLATE = """\
 [Desktop Entry]
 Type=Application
 Name=lazyrate indicator
 Comment=Tasa BCV y Binance P2P en la barra de GNOME
-Exec=lazyrate-indicator
+Exec={exec_path}
 Icon=lazyrate
 X-GNOME-Autostart-Delay=10
 """
+
+
+def _indicator_command() -> str:
+    """Ruta absoluta del indicador para el .desktop de autostart.
+
+    El PATH de la sesión de GNOME no siempre incluye ~/.local/bin al arrancar,
+    así que 'lazyrate-indicator' a secas puede fallar con pipx.
+    """
+    sibling = Path(sys.executable).with_name("lazyrate-indicator")
+    if sibling.is_file() and os.access(sibling, os.X_OK):
+        return str(sibling)
+    return shutil.which("lazyrate-indicator") or "lazyrate-indicator"
+
+
+def _autostart_desktop() -> str:
+    return AUTOSTART_DESKTOP_TEMPLATE.format(exec_path=_indicator_command())
 
 
 def _print_current(cfg: config_mod.Config, only_source: str | None) -> bool:
@@ -106,13 +140,13 @@ def _cmd_autostart(args: argparse.Namespace) -> int:
     system_file = Path("/etc/xdg/autostart/lazyrate-indicator.desktop")
     if args.action == "enable":
         user_dir.mkdir(parents=True, exist_ok=True)
-        user_file.write_text(AUTOSTART_DESKTOP, encoding="utf-8")
+        user_file.write_text(_autostart_desktop(), encoding="utf-8")
         print(f"Autostart habilitado: {user_file}")
     elif args.action == "disable":
         if system_file.exists():
             # No podemos tocar /etc; un override de usuario con Hidden=true lo desactiva
             user_dir.mkdir(parents=True, exist_ok=True)
-            user_file.write_text(AUTOSTART_DESKTOP + "Hidden=true\n", encoding="utf-8")
+            user_file.write_text(_autostart_desktop() + "Hidden=true\n", encoding="utf-8")
             print(f"Autostart deshabilitado (override): {user_file}")
         elif user_file.exists():
             user_file.unlink()

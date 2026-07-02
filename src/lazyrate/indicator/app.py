@@ -27,6 +27,7 @@ from gi.repository import Gdk, Gio, GLib, Gtk  # noqa: E402
 
 from lazyrate import config as config_mod  # noqa: E402
 from lazyrate import service, store  # noqa: E402
+from lazyrate.cli import tui_command  # noqa: E402
 from lazyrate.format import format_rate  # noqa: E402
 from lazyrate.providers.base import now_utc, today_caracas, validate_quote  # noqa: E402
 
@@ -235,17 +236,16 @@ class IndicatorApp:
         self.start_fetch()
 
     def _on_open_history(self, _item: Gtk.MenuItem) -> None:
-        try:
-            GLib.spawn_async(
-                ["gnome-terminal", "--", "lazyrate"], flags=GLib.SpawnFlags.SEARCH_PATH
-            )
-        except GLib.Error:
+        # Ruta absoluta de la TUI: la terminal hereda un PATH sin el venv/pipx,
+        # así que "lazyrate" a secas fallaría dentro de gnome-terminal.
+        tui = tui_command()
+        for terminal in (["gnome-terminal", "--"], ["x-terminal-emulator", "-e"]):
             try:
-                GLib.spawn_async(
-                    ["x-terminal-emulator", "-e", "lazyrate"], flags=GLib.SpawnFlags.SEARCH_PATH
-                )
+                GLib.spawn_async(terminal + tui, flags=GLib.SpawnFlags.SEARCH_PATH)
+                return
             except GLib.Error:
-                log.warning("No se encontró un emulador de terminal para abrir la TUI")
+                continue
+        log.warning("No se encontró un emulador de terminal para abrir la TUI")
 
     def _on_reload_config(self, _item: Gtk.MenuItem) -> None:
         self.reload_config()

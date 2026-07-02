@@ -77,6 +77,26 @@ def test_config_discards_wrong_types():
     assert cfg.bcv.currencies == ["USD"]
 
 
+def test_tui_command_never_relies_on_bare_path(monkeypatch, tmp_path):
+    # "Abrir historial" fallaba: gnome-terminal no ve el PATH del venv/pipx
+    from lazyrate import cli
+
+    fake_python = tmp_path / "bin" / "python3"
+    fake_python.parent.mkdir(parents=True)
+    fake_python.touch()
+    monkeypatch.setattr(cli.sys, "executable", str(fake_python))
+
+    # Sin script hermano ni PATH: cae a "python -m lazyrate"
+    monkeypatch.setattr(cli.shutil, "which", lambda _name: None)
+    assert cli.tui_command() == [str(fake_python), "-m", "lazyrate"]
+
+    # Con script hermano del intérprete (venv/pipx/deb): usa su ruta absoluta
+    sibling = fake_python.with_name("lazyrate")
+    sibling.write_text("#!/bin/sh\n")
+    sibling.chmod(0o755)
+    assert cli.tui_command() == [str(sibling)]
+
+
 def test_bar_text_falls_back_on_invalid_format():
     from lazyrate import service
 
