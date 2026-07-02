@@ -32,7 +32,13 @@ jobs:
           dch --newversion "${TAG}-1" --distribution noble "Release ${GITHUB_REF_NAME}"
 
       - name: Build .deb
-        run: dpkg-buildpackage -us -uc -b
+        run: |
+          set -o pipefail
+          # En fallo, las últimas líneas salen como anotaciones (visibles sin auth)
+          dpkg-buildpackage -us -uc -b 2>&1 | tee build.log || {
+            tail -n 15 build.log | while IFS= read -r line; do echo "::error::${line}"; done
+            exit 1
+          }
 
       - name: Collect artifacts
         run: |
