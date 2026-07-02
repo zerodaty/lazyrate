@@ -5,6 +5,18 @@ versionado [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-07-02
+
+### Fixed
+- "Abrir historial" del indicador ahora resuelve la ruta absoluta de la TUI;
+  antes fallaba cuando `lazyrate` no estaba en el PATH de gnome-terminal
+  (instalaciones con venv/pipx).
+- `lazyrate autostart` escribe la ruta absoluta del indicador en el `.desktop`
+  (el PATH de la sesión de GNOME no siempre incluye `~/.local/bin`).
+- El texto del indicador se restaura al despertar de la suspensión (señal
+  `PrepareForSleep` de logind + re-pintado periódico del label) y se consulta
+  la tasa de inmediato al reanudar.
+
 ## [0.1.0] - 2026-07-01
 
 ### Added
