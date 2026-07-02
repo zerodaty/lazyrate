@@ -1,0 +1,28 @@
+Source: lazyrate
+Section: utils
+Priority: optional
+Maintainer: Frany Velasquez <zerodaty@gmail.com>
+Build-Depends: debhelper-compat (= 13), python3, python3-pip, python3-setuptools
+Standards-Version: 4.6.2
+Homepage: https://github.com/zerodaty/lazyrate
+
+Package: lazyrate
+Architecture: all
+Depends: python3 (>= 3.11),
+         python3-gi,
+         gir1.2-ayatanaappindicator3-0.1,
+         gir1.2-gtk-3.0,
+         python3-xlrd,
+         python3-tomli-w
+Recommends: gnome-terminal
+Description: BCV and Binance P2P exchange rates in the GNOME top bar
+ lazyrate shows the official BCV exchange rate and the Binance P2P
+ (USDT/VES) market rate for Venezuela directly in the GNOME top bar
+ through an AppIndicator, and provides a lazydocker-style terminal
+ user interface with history, statistics and charts.
+ .
+ The TUI stack (textual, textual-plotext and their dependencies) is
+ vendored under /usr/lib/lazyrate because the versions packaged in
+ the Ubuntu archive are too old or missing. Rates are fetched on a
+ schedule, stored locally in SQLite and displayed with day change,
+ trend and gap between both sources.

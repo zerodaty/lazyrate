@@ -1,0 +1,134 @@
+/* Estilos de la TUI de lazyrate — estética sobria estilo lazydocker. */
+
+Screen {
+    background: $background;
+}
+
+#main {
+    height: 1fr;
+}
+
+/* -------------------------------------------------- panel izquierdo: Fuentes */
+
+SourcesList {
+    width: 30%;
+    min-width: 24;
+    height: 1fr;
+    border: round $secondary;
+    border-title-color: $text;
+    border-title-style: bold;
+    background: transparent;
+    padding: 0 1;
+}
+
+SourcesList:focus {
+    border: round $accent;
+}
+
+#right {
+    width: 1fr;
+    height: 1fr;
+}
+
+/* ------------------------------------------------ panel derecho: Evolución */
+
+RateChart {
+    height: 60%;
+    min-height: 10;
+    border: round $secondary;
+    border-title-color: $text;
+    border-title-style: bold;
+}
+
+RateChart:focus {
+    border: round $accent;
+}
+
+/* --------------------------------------------- panel derecho: Estadísticas */
+
+#stats-box {
+    height: 1fr;
+    border: round $secondary;
+    border-title-color: $text;
+    border-title-style: bold;
+    padding: 0 1;
+}
+
+StatsPanel {
+    height: auto;
+}
+
+#spark {
+    height: 1;
+    margin-top: 1;
+}
+
+/* --------------------------------------------------- modal de configuración */
+
+ConfigScreen {
+    align: center middle;
+}
+
+#config-dialog {
+    width: 76;
+    max-width: 96%;
+    height: auto;
+    max-height: 90%;
+    border: round $accent;
+    background: $surface;
+    padding: 1 2;
+}
+
+#config-title {
+    width: 100%;
+    text-align: center;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+#config-body {
+    height: auto;
+    max-height: 100%;
+}
+
+.cfg-section {
+    color: $accent;
+    text-style: bold;
+    margin-top: 1;
+}
+
+.cfg-row {
+    height: auto;
+    margin-top: 0;
+}
+
+.cfg-row > Label {
+    width: 28;
+    padding: 1 1 0 0;
+}
+
+.cfg-row > Input {
+    width: 1fr;
+}
+
+.cfg-row > Select {
+    width: 1fr;
+}
+
+.cfg-row > SelectionList {
+    width: 1fr;
+    height: auto;
+    max-height: 7;
+    border: round $secondary;
+    background: transparent;
+}
+
+#config-buttons {
+    height: auto;
+    align-horizontal: right;
+    margin-top: 1;
+}
+
+#config-buttons Button {
+    margin-left: 2;
+}

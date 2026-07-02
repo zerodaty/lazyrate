@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  deb:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y debhelper devscripts
+
+      - name: Link debian directory
+        run: ln -sfn packaging/debian debian
+
+      - name: Set changelog version from tag
+        env:
+          DEBEMAIL: zerodaty@gmail.com
+          DEBFULLNAME: Frany Velasquez
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          dch --newversion "${TAG}-1" --distribution noble "Release ${GITHUB_REF_NAME}"
+
+      - name: Build .deb
+        run: dpkg-buildpackage -us -uc -b
+
+      - name: Collect artifacts
+        run: |
+          mkdir dist
+          mv ../lazyrate_*_all.deb dist/
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.deb
+          generate_release_notes: true

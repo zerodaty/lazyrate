@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=lazyrate indicator
+Comment=Tasa BCV y Binance P2P en la barra de GNOME
+Exec=lazyrate-indicator
+Icon=lazyrate
+X-GNOME-Autostart-Delay=10

@@ -1,0 +1,16 @@
+# Vendored TUI stack for the .deb (installed with pip --no-deps into
+# /usr/lib/lazyrate), so this must be the COMPLETE transitive closure of
+# textual + textual-plotext. Pins match the development venv.
+# xlrd and tomli-w are NOT listed here: they come from apt.
+textual==1.0.0
+textual-plotext==1.0.1
+plotext==5.3.2
+rich==13.7.1
+markdown-it-py==3.0.0
+mdit-py-plugins==0.6.1
+mdurl==0.1.2
+linkify-it-py==2.1.0
+uc-micro-py==2.0.0
+pygments==2.17.2
+typing_extensions==4.10.0
+platformdirs==4.5.1

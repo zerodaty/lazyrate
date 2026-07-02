@@ -1,0 +1,14 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_build:
+
+override_dh_auto_test:
+
+override_dh_auto_install:
+	pip3 install --no-deps --no-compile --break-system-packages \
+		--target debian/lazyrate/usr/lib/lazyrate \
+		. -r packaging/vendor-requirements.txt
+	rm -rf debian/lazyrate/usr/lib/lazyrate/bin
