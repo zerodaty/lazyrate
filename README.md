@@ -43,7 +43,13 @@ propio banco, para que la gráfica tenga contexto desde la primera ejecución.
 
 ## Capturas
 
-La TUI con la gráfica del histórico, junto al indicador de la barra de GNOME:
+![Demo de la TUI de lazyrate](docs/img/tui.gif)
+
+*(Demo generada con [vhs](https://github.com/charmbracelet/vhs) desde
+`docs/demo.tape`, con datos reales del histórico — para regrabarla:
+`vhs docs/demo.tape`.)*
+
+La TUI junto al indicador de la barra de GNOME:
 
 ![TUI de lazyrate con el indicador de GNOME](docs/img/tui.png)
 
@@ -54,8 +60,6 @@ El indicador y su menú de cerca:
 La pantalla de configuración (`c` dentro de la TUI):
 
 ![Pantalla de configuración](docs/img/config.png)
-
-<!-- TODO: grabar un GIF de la TUI con vhs -->
 
 ## Instalación
 
