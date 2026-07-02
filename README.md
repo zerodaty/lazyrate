@@ -45,9 +45,6 @@ propio banco, para que la gráfica tenga contexto desde la primera ejecución.
 
 ![Demo de la TUI de lazyrate](docs/img/tui.gif)
 
-*(Demo generada con [vhs](https://github.com/charmbracelet/vhs) desde
-`docs/demo.tape`, con datos reales del histórico — para regrabarla:
-`vhs docs/demo.tape`.)*
 
 La TUI junto al indicador de la barra de GNOME:
 
