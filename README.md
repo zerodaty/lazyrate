@@ -8,6 +8,17 @@
 [![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 
+## Origen
+
+¡Epale! ¿Qué tal? Como bien saben, mi amado país Venezuela tiene una peculiaridad
+muy nuestra: ¡las benditas tasas! Y como me la paso todo el día en la PC —ya sea
+trabajando o haciendo este tipo de cosas— me fastidiaba mucho tener que ir a
+Binance o a la web del BCV para chequear la tasa actual y cuánto había variado.
+Así que, estando en mi casa, junté mi necesidad, mi aprecio por las lazyapps como
+[lazydocker](https://github.com/jesseduffield/lazydocker) y el estreno de
+**Fable 5**, el nuevo modelo de Anthropic —a todo esto me dije: ¿qué tal si
+quemamos tokens un rato?— y así nació **lazyrate**. 🇻🇪
+
 ## ¿Qué muestra?
 
 - **Tasa oficial del BCV** — USD, EUR, CNY, TRY y RUB, leídas directamente del Excel
@@ -32,11 +43,19 @@ propio banco, para que la gráfica tenga contexto desde la primera ejecución.
 
 ## Capturas
 
-![Barra de GNOME](docs/img/bar.png)
+La TUI con la gráfica del histórico, junto al indicador de la barra de GNOME:
 
-![TUI](docs/img/tui.gif)
+![TUI de lazyrate con el indicador de GNOME](docs/img/tui.png)
 
-<!-- TODO: grabar con vhs -->
+El indicador y su menú de cerca:
+
+![Indicador en la barra de GNOME](docs/img/bar.png)
+
+La pantalla de configuración (`c` dentro de la TUI):
+
+![Pantalla de configuración](docs/img/config.png)
+
+<!-- TODO: grabar un GIF de la TUI con vhs -->
 
 ## Instalación
 
