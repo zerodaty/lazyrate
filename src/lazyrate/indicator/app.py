@@ -81,9 +81,14 @@ class IndicatorApp:
         self.indicator.set_icon(ICON_NAME)
         self.indicator.set_status(AppIndicator.IndicatorStatus.ACTIVE)
 
+        self._last_label = ""
         self.refresh_ui()  # pinta de inmediato lo que haya en la base de datos
         self._arm_timer()
         self._watch_config()
+        self._watch_resume()
+        # GNOME re-registra los indicadores al despertar/reiniciar el shell y el
+        # label se pierde: re-pintarlo cada minuto lo restaura sin coste visible
+        GLib.timeout_add_seconds(60, self._heartbeat)
         self.start_fetch(first_run=True)
 
     # ------------------------------------------------------------------ timer
@@ -166,8 +171,15 @@ class IndicatorApp:
             if age is not None and age > 3 * self.cfg.general.refresh_minutes:
                 label += " ⚠"
                 stale_text = f"Último dato: hace {int(age)}m"
+        self._last_label = label
         self.indicator.set_label(label, label)
         self.indicator.set_menu(self._build_menu(stale_text))
+
+    def _heartbeat(self) -> bool:
+        """Re-pinta solo el label (no el menú, que podría estar abierto)."""
+        if self._last_label:
+            self.indicator.set_label(self._last_label, self._last_label)
+        return GLib.SOURCE_CONTINUE
 
     def _build_menu(self, stale_text: str | None) -> Gtk.Menu:
         menu = Gtk.Menu()
@@ -277,6 +289,35 @@ class IndicatorApp:
             self._arm_timer()
         self.refresh_ui()
         log.info("Configuración recargada")
+
+    # ------------------------------------------------------------------ suspensión
+
+    def _watch_resume(self) -> None:
+        """Refresca al despertar de la suspensión (PrepareForSleep de logind).
+
+        Durante la suspensión los timers de GLib no corren y GNOME re-registra
+        el indicador perdiendo el label; sin esta señal, el texto no vuelve
+        hasta el siguiente ciclo de refresco.
+        """
+        try:
+            self._logind = Gio.DBusProxy.new_for_bus_sync(
+                Gio.BusType.SYSTEM,
+                Gio.DBusProxyFlags.DO_NOT_LOAD_PROPERTIES,
+                None,
+                "org.freedesktop.login1",
+                "/org/freedesktop/login1",
+                "org.freedesktop.login1.Manager",
+                None,
+            )
+            self._logind.connect("g-signal", self._on_logind_signal)
+        except GLib.Error as exc:
+            log.warning("Sin señal de logind (%s); tras suspender, el label tarda un ciclo", exc)
+
+    def _on_logind_signal(self, _proxy, _sender, signal_name: str, params) -> None:
+        if signal_name == "PrepareForSleep" and not params.unpack()[0]:
+            log.info("Equipo reanudado tras suspensión; refrescando indicador")
+            self.refresh_ui()
+            self.start_fetch()
 
 
 def _on_exit_signal() -> bool:
