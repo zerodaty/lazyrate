@@ -136,6 +136,7 @@ ConfigScreen {
 #calc-view {
     height: 1fr;
     padding: 0 1;
+    scrollbar-size-vertical: 1;
 }
 
 .calc-label {

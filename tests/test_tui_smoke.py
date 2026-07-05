@@ -100,6 +100,8 @@ def test_calculator_smoke(tmp_path, monkeypatch):
             assert "Comparación" in str(chart.border_title)
             comp = app.query_one("#stats", StatsPanel)
             assert "Disparidad B vs A" in comp.plain_text
+            # El sparkline se oculta en comparación (la gráfica grande ya lo cubre)
+            assert app.query_one("#spark").display is False
 
             # El modo inverso (Bs→Divisa) solo cambia los resultados de la izquierda
             app.query_one("#calc-direction", Select).value = "to_currency"
@@ -111,5 +113,6 @@ def test_calculator_smoke(tmp_path, monkeypatch):
             await pilot.pause()
             assert tabs.active == "tab-fuentes"
             assert "Evolución" in str(chart.border_title)
+            assert app.query_one("#spark").display is True  # el sparkline vuelve
 
     asyncio.run(drive())

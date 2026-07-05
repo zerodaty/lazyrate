@@ -36,6 +36,7 @@ log = logging.getLogger(__name__)
 INDICATOR_ID = "lazyrate"
 ICON_NAME = "lazyrate"
 BCV_MAX_AGE_MINUTES = 60  # re-consultar BCV si el último fetch tiene más de 1 hora
+TERMINAL_GEOMETRY = "120x34"  # columnas x filas para "Abrir historial"
 
 
 def _setup_logging() -> None:
@@ -251,7 +252,12 @@ class IndicatorApp:
         # Ruta absoluta de la TUI: la terminal hereda un PATH sin el venv/pipx,
         # así que "lazyrate" a secas fallaría dentro de gnome-terminal.
         tui = tui_command()
-        for terminal in (["gnome-terminal", "--"], ["x-terminal-emulator", "-e"]):
+        # El tamaño por defecto (80x24) queda apretado para la TUI; se pide una
+        # ventana holgada donde el emulador lo soporta (gnome-terminal).
+        for terminal in (
+            ["gnome-terminal", f"--geometry={TERMINAL_GEOMETRY}", "--"],
+            ["x-terminal-emulator", "-e"],
+        ):
             try:
                 GLib.spawn_async(terminal + tui, flags=GLib.SpawnFlags.SEARCH_PATH)
                 return

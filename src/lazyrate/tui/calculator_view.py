@@ -76,7 +76,7 @@ class CalculatorView(VerticalScroll):
             validators=[Function(self._amount_ok, "Monto inválido")],
             id="calc-amount",
         )
-        yield Label("coma para decimales · ej. 1.234,56", id="calc-hint")
+        yield Label("coma decimal · ej. 1.234,56", id="calc-hint")
         yield Label("Tasa A", classes="calc-label")
         yield Select(
             options,

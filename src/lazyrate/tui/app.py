@@ -158,6 +158,7 @@ class LazyrateApp(App):
     def _update_stats(self) -> None:
         panel = self._main_widget("#stats", StatsPanel)
         spark = self._main_widget("#spark", Sparkline)
+        spark.display = True  # el modo comparación lo oculta; aquí vuelve
         pair = self.active_pair
         if pair is None:
             panel.update_stats([("Sin datos", "presiona r para obtener")])
@@ -216,11 +217,13 @@ class LazyrateApp(App):
         self._main_widget("#stats-box", Vertical).border_title = "Comparación"
         range_label = RANGE_LABELS[self.range_days]
 
+        # La gráfica grande ya muestra ambas series: el sparkline solo estorba
+        # aquí (parece una barra de scroll suelta)
+        spark.display = False
         legs = self._main_widget("#calc-view", CalculatorView).current_legs()
         if legs is None:
             chart.update_chart([], f"Comparación ({range_label})")
             panel.update_stats([("Sin datos", "presiona r para obtener")])
-            spark.data = []
             return
         (src_a, cur_a), (src_b, cur_b) = legs
         label_a = f"{source_label(src_a)} {cur_a}"
@@ -232,7 +235,6 @@ class LazyrateApp(App):
             f"Comparación ({range_label}) — {label_a} vs {label_b}",
         )
         panel.update_stats(self._comparison_rows(label_a, series_a, label_b, series_b))
-        spark.data = [rate for _, rate in series_b[-STATS_SPARK_POINTS:]]
 
     def _comparison_rows(
         self, label_a: str, series_a: Series, label_b: str, series_b: Series
