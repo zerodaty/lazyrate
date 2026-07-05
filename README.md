@@ -75,18 +75,35 @@ trae las dependencias del sistema (PyGObject/AppIndicator) ya resueltas.
 
 ### Fedora (y otras distros)
 
+El indicador usa PyGObject/AppIndicator **del sistema** (no son pip-instalables),
+así que primero instala esas librerías con tu gestor de paquetes:
+
 ```bash
-pipx install lazyrate
+# Fedora
+sudo dnf install python3-gobject libayatana-appindicator-gtk3
+# Debian/Ubuntu (si no usas el .deb)
+sudo apt install python3-gi gir1.2-ayatanaappindicator3-0.1
+```
+
+y luego instala lazyrate con pipx — el `--system-site-packages` es imprescindible
+para que el indicador vea PyGObject, y el extra `[tui]` trae la interfaz de terminal:
+
+```bash
+pipx install --system-site-packages 'lazyrate[tui] @ git+https://github.com/zerodaty/lazyrate'
 ```
 
 En GNOME ≥ 41 necesitas además la extensión
 [AppIndicator and KStatusNotifierItem Support](https://extensions.gnome.org/extension/615/appindicator-support/)
-para que el indicador aparezca en la barra.
+para que el indicador aparezca en la barra. La TUI y la CLI no dependen de nada de
+esto: funcionan en cualquier distro y escritorio; solo el indicador requiere una
+barra con soporte AppIndicator.
 
 ### Desde el código
 
 ```bash
-pipx install git+https://github.com/zerodaty/lazyrate
+git clone https://github.com/zerodaty/lazyrate
+cd lazyrate
+pipx install --system-site-packages '.[tui]'
 ```
 
 ## Uso
