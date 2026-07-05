@@ -5,6 +5,8 @@ versionado [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-05
+
 ### Added
 
 - Calculadora de conversión integrada en la TUI, como una pestaña "Calculadora"
@@ -14,6 +16,17 @@ versionado [SemVer](https://semver.org/lang/es/).
   estadísticas de brecha. Por defecto compara BCV USD con Binance USDT, pero el par
   y la dirección son configurables y se recuerdan entre sesiones (sección `[calc]`
   del `config.toml`). No consulta la red: usa solo el histórico local.
+
+### Changed
+
+- "Abrir historial" del indicador abre la terminal con un tamaño holgado (120×34);
+  antes el 80×24 por defecto dejaba la TUI apretada.
+
+### Fixed
+
+- README: la instalación con pipx ahora indica `--system-site-packages` y el extra
+  `[tui]`, e instala desde el repositorio (el paquete no está en PyPI); el comando
+  anterior dejaba el indicador sin PyGObject y sin la interfaz de terminal.
 
 ## [0.1.1] - 2026-07-02
 
