@@ -47,6 +47,27 @@ def test_save_load_roundtrip():
     assert config_mod.load() == cfg
 
 
+def test_calc_section_roundtrip():
+    cfg = config_mod.Config()
+    cfg.calc.source_a = "binance_p2p"
+    cfg.calc.currency_a = "USDT"
+    cfg.calc.source_b = "bcv"
+    cfg.calc.currency_b = "EUR"
+    cfg.calc.direction = "to_currency"
+    config_mod.save(cfg)
+    assert config_mod.load() == cfg
+
+
+def test_calc_invalid_types_fall_back_to_defaults():
+    config_mod.config_dir().mkdir(parents=True)
+    config_mod.config_path().write_text(
+        "[calc]\ndirection = 3\ncurrency_a = true\n",
+        encoding="utf-8",
+    )
+    cfg = config_mod.load()
+    assert cfg.calc == config_mod.CalcCfg()
+
+
 def test_unknown_keys_are_ignored():
     config_mod.config_dir().mkdir(parents=True)
     config_mod.config_path().write_text(

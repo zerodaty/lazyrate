@@ -57,6 +57,25 @@ def enabled_pairs(cfg: Config) -> list[tuple[str, str]]:
     return pairs
 
 
+def available_pairs(cfg: Config) -> list[tuple[str, str]]:
+    """Pares habilitados por config más los que ya tienen datos guardados.
+
+    Une la configuración vigente con lo que hay en la base: una fuente que se
+    deshabilitó pero cuyo histórico sigue guardado sigue siendo consultable.
+    """
+    pairs = list(enabled_pairs(cfg))
+    for pair in store.sources_with_data():
+        if pair not in pairs:
+            pairs.append(pair)
+    return pairs
+
+
+def latest_rate(source: str, currency: str) -> store.RateRow | None:
+    """Tasa vigente de un par; para BCV se acota a la fecha valor de hoy o antes."""
+    on_or_before = today_caracas() if source == "bcv" else None
+    return store.latest(source, currency, on_or_before=on_or_before)
+
+
 def bar_values(cfg: Config) -> dict[str, str]:
     """Valores formateados para los placeholders del formato de la barra."""
     today = today_caracas()

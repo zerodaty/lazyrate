@@ -80,11 +80,22 @@ class BinanceCfg:
 
 
 @dataclass
+class CalcCfg:
+    # Última selección de la calculadora de la TUI, para reabrir donde se dejó.
+    source_a: str = "bcv"
+    currency_a: str = "USD"
+    source_b: str = "binance_p2p"
+    currency_b: str = "USDT"
+    direction: str = "to_bs"  # "to_bs" (divisa→Bs) | "to_currency" (Bs→divisa)
+
+
+@dataclass
 class Config:
     general: GeneralCfg = field(default_factory=GeneralCfg)
     bar: BarCfg = field(default_factory=BarCfg)
     bcv: BcvCfg = field(default_factory=BcvCfg)
     binance: BinanceCfg = field(default_factory=BinanceCfg)
+    calc: CalcCfg = field(default_factory=CalcCfg)
 
 
 def _section(cls, data: dict):
@@ -144,6 +155,7 @@ def load(create: bool = True) -> Config:
         bar=_section(BarCfg, data.get("bar", {})),
         bcv=_section(BcvCfg, data.get("bcv", {})),
         binance=_section(BinanceCfg, data.get("binance", {})),
+        calc=_section(CalcCfg, data.get("calc", {})),
     )
 
 

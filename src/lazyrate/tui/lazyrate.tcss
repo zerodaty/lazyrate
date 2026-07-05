@@ -8,21 +8,19 @@ Screen {
     height: 1fr;
 }
 
-/* -------------------------------------------------- panel izquierdo: Fuentes */
+/* ------------------------------------- panel izquierdo: pestañas Fuentes/Calc */
 
-SourcesList {
-    width: 30%;
-    min-width: 24;
+#left-tabs {
+    width: 34%;
+    min-width: 32;
     height: 1fr;
-    border: round $secondary;
-    border-title-color: $text;
-    border-title-style: bold;
-    background: transparent;
-    padding: 0 1;
 }
 
-SourcesList:focus {
-    border: round $accent;
+SourcesList {
+    height: 1fr;
+    border: none;
+    background: transparent;
+    padding: 0 1;
 }
 
 #right {
@@ -131,4 +129,50 @@ ConfigScreen {
 
 #config-buttons Button {
     margin-left: 2;
+}
+
+/* ------------------------ pestaña Calculadora: formulario apilado (columna) */
+
+#calc-view {
+    height: 1fr;
+    padding: 0 1;
+}
+
+.calc-label {
+    color: $accent;
+    text-style: bold;
+    margin-top: 1;
+}
+
+#calc-view Input {
+    width: 100%;
+}
+
+#calc-view Select {
+    width: 100%;
+}
+
+#calc-hint {
+    color: $text-muted;
+    text-style: italic;
+}
+
+#calc-result {
+    height: auto;
+    margin-top: 1;
+}
+
+#calc-empty {
+    padding: 1;
+}
+
+#btn-copy {
+    margin-top: 1;
+    width: 100%;
+}
+
+#calc-back-hint {
+    color: $text-muted;
+    text-style: italic;
+    margin-top: 1;
 }

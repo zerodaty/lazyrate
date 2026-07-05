@@ -6,12 +6,14 @@ from textual import on, work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
-from textual.widgets import Footer, Sparkline
+from textual.widgets import Footer, Select, Sparkline, TabbedContent, TabPane
 from textual.widgets.option_list import Option
 
 from lazyrate import config as config_mod
 from lazyrate import service, stats, store
+from lazyrate.calc import disparity_pct
 from lazyrate.format import format_rate
+from lazyrate.tui.calculator_view import CalculatorView
 from lazyrate.tui.widgets import (
     RateChart,
     Series,
@@ -24,6 +26,7 @@ from lazyrate.tui.widgets import (
 
 RANGE_LABELS = {7: "7d", 30: "30d", 90: "90d", 0: "todo"}
 STATS_SPARK_POINTS = 30
+CALC_TAB_ID = "tab-calc"
 
 
 class LazyrateApp(App):
@@ -36,6 +39,8 @@ class LazyrateApp(App):
         Binding("q", "quit", "Salir"),
         Binding("r", "refresh_data", "Actualizar"),
         Binding("c", "open_config", "Configuración"),
+        Binding("equals_sign", "open_calculator", "Calculadora"),
+        Binding("escape", "back_to_fuentes", "Volver", show=False),
         Binding("b", "toggle_compare", "Comparar"),
         Binding("7", "set_range(7)", "7d"),
         Binding("3", "set_range(30)", "30d"),
@@ -52,7 +57,11 @@ class LazyrateApp(App):
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="main"):
-            yield SourcesList(id="sources")
+            with TabbedContent(initial="tab-fuentes", id="left-tabs"):
+                with TabPane("Fuentes", id="tab-fuentes"):
+                    yield SourcesList(id="sources")
+                with TabPane("Calculadora", id=CALC_TAB_ID):
+                    yield CalculatorView(self.cfg, id="calc-view")
             with Vertical(id="right"):
                 yield RateChart(id="chart")
                 with Vertical(id="stats-box"):
@@ -61,7 +70,6 @@ class LazyrateApp(App):
         yield Footer()
 
     def on_mount(self) -> None:
-        self._main_widget("#sources", SourcesList).border_title = "Fuentes"
         self._main_widget("#stats-box", Vertical).border_title = "Estadísticas"
         self._reload_pairs()
         self._refresh_views()
@@ -86,19 +94,32 @@ class LazyrateApp(App):
 
     def _reload_pairs(self) -> None:
         """Une los pares habilitados por configuración con los que tienen datos."""
-        pairs = list(service.enabled_pairs(self.cfg))
-        for pair in store.sources_with_data():
-            if pair not in pairs:
-                pairs.append(pair)
-        self.pairs = pairs
+        self.pairs = service.available_pairs(self.cfg)
         sources = self._main_widget("#sources", SourcesList)
         previous = sources.highlighted if sources.highlighted is not None else 0
         sources.clear_options()
         sources.add_options(
-            Option(pair_label(src, cur), id=f"{src}:{cur}") for src, cur in pairs
+            Option(pair_label(src, cur), id=f"{src}:{cur}") for src, cur in self.pairs
         )
-        if pairs:
-            sources.highlighted = min(previous, len(pairs) - 1)
+        if self.pairs:
+            sources.highlighted = min(previous, len(self.pairs) - 1)
+
+    def _reload_calc(self) -> None:
+        """Re-sincroniza el panel de la calculadora tras un refresco o cambio de config."""
+        try:
+            calc = self._main_widget("#calc-view", CalculatorView)
+        except Exception:  # noqa: BLE001 — aún no montado
+            return
+        calc.reload(self.cfg)
+
+    def _calc_tab_active(self) -> bool:
+        return self._main_widget("#left-tabs", TabbedContent).active == CALC_TAB_ID
+
+    def _focus_calc_input(self) -> None:
+        calc = self._main_widget("#calc-view", CalculatorView)
+        field = calc.query("#calc-amount")
+        if field:
+            field.first().focus()
 
     def _series(self, source: str, currency: str) -> Series:
         return store.daily_series(source, currency, days=self.range_days or None)
@@ -106,8 +127,13 @@ class LazyrateApp(App):
     # ------------------------------------------------------------------ vistas
 
     def _refresh_views(self) -> None:
-        self._update_chart()
-        self._update_stats()
+        """Refresca el panel derecho según la pestaña activa (fuente vs comparación A/B)."""
+        if self._calc_tab_active():
+            self._update_comparison()
+        else:
+            self._main_widget("#stats-box", Vertical).border_title = "Estadísticas"
+            self._update_chart()
+            self._update_stats()
 
     def _update_chart(self) -> None:
         chart = self._main_widget("#chart", RateChart)
@@ -180,15 +206,78 @@ class LazyrateApp(App):
         gap = stats.gap_pct(bcv_series, p2p_series)
         return ("Brecha BCV↔P2P", format_pct(gap) if gap is not None else "—")
 
+    # ----------------------------------------------------- vista de comparación
+
+    def _update_comparison(self) -> None:
+        """Panel derecho en la pestaña Calculadora: gráfica A vs B y su brecha."""
+        chart = self._main_widget("#chart", RateChart)
+        panel = self._main_widget("#stats", StatsPanel)
+        spark = self._main_widget("#spark", Sparkline)
+        self._main_widget("#stats-box", Vertical).border_title = "Comparación"
+        range_label = RANGE_LABELS[self.range_days]
+
+        legs = self._main_widget("#calc-view", CalculatorView).current_legs()
+        if legs is None:
+            chart.update_chart([], f"Comparación ({range_label})")
+            panel.update_stats([("Sin datos", "presiona r para obtener")])
+            spark.data = []
+            return
+        (src_a, cur_a), (src_b, cur_b) = legs
+        label_a = f"{source_label(src_a)} {cur_a}"
+        label_b = f"{source_label(src_b)} {cur_b}"
+        series_a = self._series(src_a, cur_a)
+        series_b = self._series(src_b, cur_b)
+        chart.update_chart(
+            [(label_a, series_a), (label_b, series_b)],
+            f"Comparación ({range_label}) — {label_a} vs {label_b}",
+        )
+        panel.update_stats(self._comparison_rows(label_a, series_a, label_b, series_b))
+        spark.data = [rate for _, rate in series_b[-STATS_SPARK_POINTS:]]
+
+    def _comparison_rows(
+        self, label_a: str, series_a: Series, label_b: str, series_b: Series
+    ) -> list[tuple[str, str]]:
+        head_a = stats.current(series_a)
+        head_b = stats.current(series_b)
+        rows: list[tuple[str, str]] = [
+            (f"A · {label_a}", f"{format_rate(head_a[1], 4)} Bs" if head_a else "—"),
+            (f"B · {label_b}", f"{format_rate(head_b[1], 4)} Bs" if head_b else "—"),
+        ]
+        if head_a and head_b:
+            gap = disparity_pct(head_a[1], head_b[1])
+            rows.append(("Disparidad B vs A", format_pct(gap) if gap is not None else "—"))
+        mean_a = stats.mean_last(series_a, 30)
+        mean_b = stats.mean_last(series_b, 30)
+        rows.append(("Prom 30d A", f"{format_rate(mean_a, 4)} Bs" if mean_a is not None else "—"))
+        rows.append(("Prom 30d B", f"{format_rate(mean_b, 4)} Bs" if mean_b is not None else "—"))
+        trend_a = stats.trend(series_a, points=7)
+        trend_b = stats.trend(series_b, points=7)
+        rows.append(("Tendencia A", trend_a[1] if trend_a else "—"))
+        rows.append(("Tendencia B", trend_b[1] if trend_b else "—"))
+        return rows
+
     # ------------------------------------------------------------------ eventos
 
     @on(SourcesList.OptionHighlighted, "#sources")
-    def _on_source_highlighted(self) -> None:
-        self._refresh_views()
-
     @on(SourcesList.OptionSelected, "#sources")
-    def _on_source_selected(self) -> None:
-        self._refresh_views()
+    def _on_source_changed(self) -> None:
+        if not self._calc_tab_active():
+            self._refresh_views()
+
+    @on(TabbedContent.TabActivated, "#left-tabs")
+    def _on_tab_activated(self, event: TabbedContent.TabActivated) -> None:
+        if event.pane is not None and event.pane.id == CALC_TAB_ID:
+            self._update_comparison()
+        else:
+            self._main_widget("#stats-box", Vertical).border_title = "Estadísticas"
+            self._update_chart()
+            self._update_stats()
+
+    @on(Select.Changed)
+    def _on_calc_leg_changed(self) -> None:
+        # Cambiar Tasa A/B en la calculadora re-grafica la comparación del panel derecho
+        if self._calc_tab_active():
+            self._update_comparison()
 
     # ------------------------------------------------------------------ acciones
 
@@ -207,9 +296,30 @@ class LazyrateApp(App):
             if saved:
                 self.cfg = config_mod.load()
                 self._reload_pairs()
+                self._reload_calc()
                 self._refresh_views()
 
         self.push_screen(ConfigScreen(self.cfg), _on_close)
+
+    def action_open_calculator(self) -> None:
+        """Alterna entre las pestañas Calculadora y Fuentes (atajo de la tecla '=')."""
+        tabs = self._main_widget("#left-tabs", TabbedContent)
+        # Textual no oculta un pane cuyo hijo tiene el foco: hay que soltarlo antes.
+        self.set_focus(None)
+        if tabs.active == CALC_TAB_ID:
+            tabs.active = "tab-fuentes"
+            self._main_widget("#sources", SourcesList).focus()
+        else:
+            tabs.active = CALC_TAB_ID
+            self._focus_calc_input()
+
+    def action_back_to_fuentes(self) -> None:
+        """Vuelve a la pestaña Fuentes (Esc); útil mientras se escribe el monto."""
+        tabs = self._main_widget("#left-tabs", TabbedContent)
+        if tabs.active == CALC_TAB_ID:
+            self.set_focus(None)
+            tabs.active = "tab-fuentes"
+            self._main_widget("#sources", SourcesList).focus()
 
     def action_refresh_data(self) -> None:
         self.notify("Actualizando tasas…", timeout=3)
@@ -237,6 +347,7 @@ class LazyrateApp(App):
 
     def _after_refresh(self, got_data: bool) -> None:
         self._reload_pairs()
+        self._reload_calc()
         self._refresh_views()
         if got_data:
             self.notify("Tasas actualizadas", timeout=3)

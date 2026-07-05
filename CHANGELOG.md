@@ -5,9 +5,20 @@ versionado [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+### Added
+
+- Calculadora de conversión integrada en la TUI, como una pestaña "Calculadora"
+  junto a "Fuentes" (o la tecla `=`). Convierte un monto comparando dos tasas
+  seleccionables en ambos sentidos (divisa→Bs y Bs→divisa) y muestra el % de
+  disparidad; el panel derecho grafica en paralelo las dos tasas elegidas con sus
+  estadísticas de brecha. Por defecto compara BCV USD con Binance USDT, pero el par
+  y la dirección son configurables y se recuerdan entre sesiones (sección `[calc]`
+  del `config.toml`). No consulta la red: usa solo el histórico local.
+
 ## [0.1.1] - 2026-07-02
 
 ### Fixed
+
 - "Abrir historial" del indicador ahora resuelve la ruta absoluta de la TUI;
   antes fallaba cuando `lazyrate` no estaba en el PATH de gnome-terminal
   (instalaciones con venv/pipx).
@@ -20,6 +31,7 @@ versionado [SemVer](https://semver.org/lang/es/).
 ## [0.1.0] - 2026-07-01
 
 ### Added
+
 - Proveedor BCV: descarga y parseo del Excel trimestral oficial (USD, EUR, CNY, TRY, RUB),
   con caché local y backfill del histórico del año.
 - Proveedor Binance P2P: promedio ponderado por cantidad con filtro de outliers (IQR)
