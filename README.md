@@ -95,6 +95,14 @@ para que el indicador vea PyGObject, y el extra `[tui]` trae la interfaz de term
 pipx install --system-site-packages 'lazyrate[tui] @ git+https://github.com/zerodaty/lazyrate'
 ```
 
+lazyrate requiere **Python ≥ 3.11** (probado en CI hasta 3.14). Si tu distro trae uno
+más viejo —p. ej. Ubuntu 22.04 trae 3.10 y pip rechazará la instalación con
+"requires a different Python"— instala un Python más nuevo y díselo a pipx:
+
+```bash
+pipx install --python python3.12 --system-site-packages 'lazyrate[tui] @ git+https://github.com/zerodaty/lazyrate'
+```
+
 En GNOME ≥ 41 necesitas además la extensión
 [AppIndicator and KStatusNotifierItem Support](https://extensions.gnome.org/extension/615/appindicator-support/)
 para que el indicador aparezca en la barra. La TUI y la CLI no dependen de nada de

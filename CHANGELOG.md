@@ -18,6 +18,9 @@ versionado [SemVer](https://semver.org/lang/es/).
 
 ### Changed
 
+- Soporte de Python verificado y declarado hasta 3.14: el CI ahora prueba
+  3.11–3.14 (la suite completa pasa en las cuatro) y el README documenta el
+  requisito de Python ≥ 3.11 con la solución para distros con uno más viejo.
 - Rendimiento: el esquema SQLite se crea una sola vez por proceso —antes cada
   consulta re-ejecutaba el DDL— y WAL usa `synchronous=NORMAL` (~3× más rápido
   por consulta, notable en el recálculo por tecla de la calculadora).
