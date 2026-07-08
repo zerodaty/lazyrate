@@ -49,13 +49,24 @@ def db_path() -> Path:
     return data_dir() / "history.db"
 
 
+# Rutas de BD cuyo esquema ya se creó en este proceso. La app abre una conexión
+# por consulta (la calculadora recalcula por tecleo): sin esta guarda, cada una
+# re-ejecutaba las 3 sentencias DDL del esquema.
+_schema_ready: set[str] = set()
+
+
 def _connect() -> sqlite3.Connection:
     path = db_path()
     path.parent.mkdir(parents=True, exist_ok=True)
+    fresh = not path.exists()  # si borraron la BD en caliente, hay que recrear el esquema
     conn = sqlite3.connect(path, timeout=5)
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA busy_timeout=5000")
-    conn.executescript(_SCHEMA)
+    conn.execute("PRAGMA synchronous=NORMAL")  # durable con WAL y con menos fsyncs
+    key = str(path)
+    if fresh or key not in _schema_ready:
+        conn.executescript(_SCHEMA)
+        _schema_ready.add(key)
     return conn
 
 

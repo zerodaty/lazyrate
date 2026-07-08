@@ -12,6 +12,8 @@ from textual.binding import Binding
 from textual.widgets import OptionList, Static
 from textual_plotext import PlotextPlot
 
+from lazyrate.format import format_pct  # noqa: F401 — re-export; vive en la capa pura
+
 if TYPE_CHECKING:
     from textual.app import RenderResult
 
@@ -28,11 +30,6 @@ def source_label(source: str) -> str:
 def pair_label(source: str, currency: str) -> str:
     """Etiqueta para la lista de fuentes: 'BCV · USD', 'Binance P2P · USDT'."""
     return f"{source_label(source)} · {currency}"
-
-
-def format_pct(value: float, decimals: int = 2) -> str:
-    """Porcentaje con signo y coma decimal es-VE: '+0,21%'."""
-    return f"{value:+.{decimals}f}".replace(".", ",") + "%"
 
 
 class SourcesList(OptionList):

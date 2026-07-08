@@ -16,6 +16,11 @@ def format_rate(value: float, decimals: int = 2) -> str:
     return text.translate(str.maketrans(",.", ".,"))
 
 
+def format_pct(value: float, decimals: int = 2) -> str:
+    """Porcentaje con signo y coma decimal es-VE: '+0,21%'."""
+    return f"{value:+.{decimals}f}".replace(".", ",") + "%"
+
+
 def parse_amount(text: str) -> float | None:
     """Convierte un monto escrito en es-VE a float; ``None`` si no es parseable.
 

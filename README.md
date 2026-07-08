@@ -35,10 +35,13 @@ Y lo muestra en dos lugares:
    forzar una actualización.
 2. **Una TUI estilo lazydocker** con gráfica histórica y panel de estadísticas:
    variación del día, promedios de 7 y 30 días, mínimo/máximo, tendencia
-   (subiendo ↑ / bajando ↓ / estable →) y brecha BCV↔P2P. Junto a "Fuentes" hay una
-   pestaña **Calculadora** (o tecla `=`): convierte un monto entre dos tasas a elegir
-   —divisa→Bs o Bs→divisa— y muestra el % de disparidad, mientras el panel derecho
-   grafica esas dos tasas superpuestas en el tiempo con sus estadísticas de brecha.
+   (subiendo ↑ / bajando ↓ / estable →) y brecha BCV↔P2P. La lista de fuentes
+   funciona como mini-dashboard: cada par muestra su tasa vigente y la variación
+   del día en color; y cuando el BCV ya publicó la tasa de mañana, las estadísticas
+   la muestran como "Próxima". Junto a "Fuentes" hay una pestaña **Calculadora**
+   (o tecla `=`): convierte un monto entre dos tasas a elegir —divisa→Bs o
+   Bs→divisa— y muestra el % de disparidad, mientras el panel derecho grafica esas
+   dos tasas superpuestas en el tiempo con sus estadísticas de brecha.
 
 Además, `lazyrate backfill` importa el **histórico oficial del BCV del año completo**
 (desde el primer día hábil del año) a partir de los Excel trimestrales que publica el
@@ -110,6 +113,8 @@ pipx install --system-site-packages '.[tui]'
 
 ```bash
 lazyrate                      # abre la TUI
+lazyrate now                  # tasas vigentes al instante, desde la base local (sin red)
+lazyrate now --json           # lo mismo en JSON, para scripts y barras de estado
 lazyrate fetch                # consulta y guarda las tasas ahora (BCV + Binance)
 lazyrate fetch --source bcv   # solo una fuente (bcv | binance)
 lazyrate history --days 30    # histórico guardado, en la terminal
@@ -117,6 +122,11 @@ lazyrate backfill             # importa el histórico BCV del año (--year para 
 lazyrate autostart enable     # autoarranque del indicador (enable | disable | status)
 lazyrate-indicator            # daemon del indicador de GNOME (en primer plano)
 ```
+
+`lazyrate now` muestra por par la tasa vigente, la variación del día y —cuando el BCV
+ya publicó la del día siguiente— la tasa "próxima", más la brecha BCV↔P2P. No toca la
+red (lee lo último guardado), así que responde al instante y sirve para `watch`, scripts
+o barras de estado tipo waybar/polybar vía `--json`.
 
 Con el `.deb`, `lazyrate-indicator` se autoarranca al iniciar sesión; no hace falta
 lanzarlo a mano. Con pipx, actívalo con `lazyrate autostart enable`.

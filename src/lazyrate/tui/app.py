@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from rich.text import Text
 from textual import on, work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -13,6 +14,7 @@ from lazyrate import config as config_mod
 from lazyrate import service, stats, store
 from lazyrate.calc import disparity_pct
 from lazyrate.format import format_rate
+from lazyrate.providers.base import today_caracas
 from lazyrate.tui.calculator_view import CalculatorView
 from lazyrate.tui.widgets import (
     RateChart,
@@ -98,11 +100,32 @@ class LazyrateApp(App):
         sources = self._main_widget("#sources", SourcesList)
         previous = sources.highlighted if sources.highlighted is not None else 0
         sources.clear_options()
-        sources.add_options(
-            Option(pair_label(src, cur), id=f"{src}:{cur}") for src, cur in self.pairs
-        )
+        sources.add_options(self._pair_option(src, cur) for src, cur in self.pairs)
         if self.pairs:
             sources.highlighted = min(previous, len(self.pairs) - 1)
+
+    def _pair_option(self, source: str, currency: str) -> Option:
+        """Ítem de la lista con la tasa vigente y la variación del día (mini-dashboard)."""
+        option_id = f"{source}:{currency}"
+        label = pair_label(source, currency)
+        row = service.latest_rate(source, currency)
+        if row is None:
+            return Option(label, id=option_id)
+        text = Text(label + "\n", no_wrap=True)
+        text.append(f"  {format_rate(row.rate, self.cfg.general.decimals)} Bs", style="bold")
+        # Sin la fecha valor futura ("próxima" del BCV): la variación es del día vigente
+        today = today_caracas()
+        series = [p for p in store.daily_series(source, currency, days=10) if p[0] <= today]
+        change = stats.day_change_pct(series)
+        if change is not None:
+            if change > 0:
+                arrow, style = "↑", "red"  # el dólar subió: pagas más Bs
+            elif change < 0:
+                arrow, style = "↓", "green"
+            else:
+                arrow, style = "→", "dim"
+            text.append(f"  {format_pct(change)} {arrow}", style=style)
+        return Option(text, id=option_id)
 
     def _reload_calc(self) -> None:
         """Re-sincroniza el panel de la calculadora tras un refresco o cambio de config."""
@@ -166,7 +189,20 @@ class LazyrateApp(App):
             return
         source, currency = pair
         series = store.daily_series(source, currency)
-        rows = self._stats_rows(series)
+        today = today_caracas()
+        # Las estadísticas describen lo vigente; la fecha valor futura del BCV
+        # (publicada por la tarde) se muestra aparte como "Próxima"
+        rows = self._stats_rows([p for p in series if p[0] <= today])
+        if source == "bcv":
+            upcoming = store.upcoming(source, currency, after=today)
+            if upcoming is not None:
+                rows.insert(
+                    1,
+                    (
+                        "Próxima",
+                        f"{format_rate(upcoming.rate, 4)} Bs ({upcoming.value_date:%d/%m/%Y})",
+                    ),
+                )
         gap_row = self._gap_row()
         if gap_row is not None:
             rows.append(gap_row)

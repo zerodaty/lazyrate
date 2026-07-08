@@ -3,15 +3,17 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
 import shutil
 import sys
+from datetime import date
 from pathlib import Path
 
-from lazyrate import __version__, store
+from lazyrate import __version__, service, stats, store
 from lazyrate import config as config_mod
-from lazyrate.format import format_rate
+from lazyrate.format import format_pct, format_rate
 from lazyrate.providers.base import today_caracas, validate_quote
 
 # El nombre público en la CLI es "binance"; internamente la fuente es "binance_p2p"
@@ -88,6 +90,77 @@ def _print_current(cfg: config_mod.Config, only_source: str | None) -> bool:
             print(f"Binance P2P {cfg.binance.asset}: {format_rate(row.rate, 2)} Bs{ads}")
             shown = True
     return shown
+
+
+def _now_entries(cfg: config_mod.Config, only_source: str | None) -> list[dict]:
+    """Snapshot por par desde la base local: tasa vigente, variación y próxima (BCV)."""
+    today = today_caracas()
+    entries: list[dict] = []
+    for source, currency in service.available_pairs(cfg):
+        if only_source and source != only_source:
+            continue
+        row = service.latest_rate(source, currency)
+        if row is None:
+            continue
+        # Sin la fecha valor futura ("próxima" del BCV): la variación es del día vigente
+        series = [p for p in store.daily_series(source, currency, days=10) if p[0] <= today]
+        change = stats.day_change_pct(series)
+        entry: dict = {
+            "source": source,
+            "currency": currency,
+            "rate": row.rate,
+            "value_date": row.value_date.isoformat(),
+            "day_change_pct": round(change, 4) if change is not None else None,
+        }
+        if source == "bcv":
+            upcoming = store.upcoming(source, currency, after=today)
+            if upcoming is not None:
+                entry["upcoming_rate"] = upcoming.rate
+                entry["upcoming_value_date"] = upcoming.value_date.isoformat()
+        entries.append(entry)
+    return entries
+
+
+def _now_gap_pct() -> float | None:
+    bcv_series = store.daily_series("bcv", "USD")
+    p2p_series = store.daily_series("binance_p2p", "USDT")
+    if not bcv_series or not p2p_series:
+        return None
+    return stats.gap_pct(bcv_series, p2p_series)
+
+
+def _cmd_now(args: argparse.Namespace) -> int:
+    """Estado actual desde la base local, sin tocar la red (vistazo rápido y scripts)."""
+    cfg = config_mod.load()
+    only_source = _SOURCE_MAP.get(args.source) if args.source else None
+    entries = _now_entries(cfg, only_source)
+    gap = _now_gap_pct() if only_source is None else None
+    if args.json:
+        payload = {
+            "pairs": entries,
+            "gap_bcv_p2p_pct": round(gap, 4) if gap is not None else None,
+        }
+        print(json.dumps(payload, ensure_ascii=False))
+        return 0 if entries else 1
+    if not entries:
+        print("Sin datos guardados todavía. Prueba: lazyrate fetch", file=sys.stderr)
+        return 1
+    for e in entries:
+        label = f"{'BCV' if e['source'] == 'bcv' else 'P2P'} {e['currency']}"
+        value_date = date.fromisoformat(e["value_date"])
+        line = f"{label:<9} {format_rate(e['rate'], 4)} Bs (vigente {value_date:%d/%m/%Y})"
+        if e["day_change_pct"] is not None:
+            line += f"  var. día {format_pct(e['day_change_pct'])}"
+        print(line)
+        if "upcoming_rate" in e:
+            upcoming_date = date.fromisoformat(e["upcoming_value_date"])
+            print(
+                f"{label:<9} próxima {format_rate(e['upcoming_rate'], 4)} Bs"
+                f" (vigente {upcoming_date:%d/%m/%Y})"
+            )
+    if gap is not None:
+        print(f"Brecha BCV↔P2P: {format_pct(gap)}")
+    return 0
 
 
 def _cmd_fetch(args: argparse.Namespace) -> int:
@@ -185,6 +258,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--version", action="version", version=f"lazyrate {__version__}")
     sub = parser.add_subparsers(dest="command")
 
+    p_now = sub.add_parser("now", help="estado actual desde la base local, sin red")
+    p_now.add_argument("--source", choices=["bcv", "binance"])
+    p_now.add_argument("--json", action="store_true", help="salida JSON (scripts, barras)")
+
     p_fetch = sub.add_parser("fetch", help="consultar y guardar las tasas ahora")
     p_fetch.add_argument("--source", choices=["bcv", "binance"])
 
@@ -205,6 +282,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command is None:
         return _run_tui()
     handlers = {
+        "now": _cmd_now,
         "fetch": _cmd_fetch,
         "history": _cmd_history,
         "backfill": _cmd_backfill,

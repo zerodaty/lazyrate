@@ -5,6 +5,31 @@ versionado [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+### Added
+
+- `lazyrate now [--json] [--source bcv|binance]`: snapshot instantáneo desde la
+  base local (sin red) con tasa vigente, variación del día, "próxima" del BCV y
+  brecha BCV↔P2P. La salida `--json` está pensada para scripts y barras de estado
+  (waybar, polybar, `watch`).
+- La lista de fuentes de la TUI es ahora un mini-dashboard: cada par muestra su
+  tasa vigente y la variación del día con color (sube rojo / baja verde).
+- Fila "Próxima" en las estadísticas de la TUI cuando el BCV ya publicó la tasa
+  del día siguiente (igual que hace el menú del indicador).
+
+### Changed
+
+- Rendimiento: el esquema SQLite se crea una sola vez por proceso —antes cada
+  consulta re-ejecutaba el DDL— y WAL usa `synchronous=NORMAL` (~3× más rápido
+  por consulta, notable en el recálculo por tecla de la calculadora).
+- `format_pct` vive ahora en `lazyrate.format` (capa pura, reutilizable desde la
+  CLI); `lazyrate.tui.widgets` lo re-exporta.
+
+### Fixed
+
+- Las estadísticas ("Actual", variación, promedios) ya no saltan a la fecha valor
+  futura cuando el BCV publica la tasa del día siguiente: lo vigente y lo próximo
+  se muestran por separado.
+
 ## [0.2.0] - 2026-07-05
 
 ### Added

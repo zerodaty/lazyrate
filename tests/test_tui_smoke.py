@@ -29,12 +29,29 @@ def _seed_history() -> None:
     assert store.insert_quotes(quotes) == 13
 
 
+def _seed_recent() -> None:
+    """Tasas BCV recientes: ayer, hoy y la 'próxima' de mañana (publicada por la tarde)."""
+    from lazyrate import store
+    from lazyrate.providers.base import Quote, today_caracas
+
+    fetched = datetime(2026, 6, 10, 12, 0, tzinfo=UTC)
+    today = today_caracas()
+    store.insert_quotes(
+        [
+            Quote("bcv", "USD", 111.0, fetched, today - timedelta(days=1)),
+            Quote("bcv", "USD", 112.0, fetched, today),
+            Quote("bcv", "USD", 115.0, fetched, today + timedelta(days=1)),
+        ]
+    )
+
+
 def test_tui_smoke(tmp_path, monkeypatch):
     _isolate_xdg(tmp_path, monkeypatch)
     _seed_history()
+    _seed_recent()
 
     from lazyrate.tui.app import LazyrateApp
-    from lazyrate.tui.widgets import RateChart, StatsPanel
+    from lazyrate.tui.widgets import RateChart, SourcesList, StatsPanel
 
     async def drive() -> None:
         app = LazyrateApp()
@@ -42,6 +59,11 @@ def test_tui_smoke(tmp_path, monkeypatch):
             await pilot.pause()
             assert ("bcv", "USD") in app.pairs
             assert ("binance_p2p", "USDT") in app.pairs
+
+            # Mini-dashboard: cada ítem de la lista muestra su tasa y variación
+            first = app.query_one("#sources", SourcesList).get_option_at_index(0).prompt
+            assert "Bs" in str(first)
+            assert "%" in str(first)
 
             await pilot.press("7")
             assert app.range_days == 7
@@ -57,6 +79,9 @@ def test_tui_smoke(tmp_path, monkeypatch):
             assert "Actual" in panel.plain_text
             assert "Tendencia 7d" in panel.plain_text
             assert "Brecha BCV↔P2P" in panel.plain_text
+            # El BCV ya publicó la tasa de mañana: aparece como "Próxima"
+            assert "Próxima" in panel.plain_text
+            assert "115,0000" in panel.plain_text
 
             chart = app.query_one(RateChart)
             assert "Evolución (todo)" in str(chart.border_title)
