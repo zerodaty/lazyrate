@@ -15,6 +15,9 @@ versionado [SemVer](https://semver.org/lang/es/).
   tasa vigente y la variación del día con color (sube rojo / baja verde).
 - Fila "Próxima" en las estadísticas de la TUI cuando el BCV ya publicó la tasa
   del día siguiente (igual que hace el menú del indicador).
+- Fila "Dif. en cambio" en la calculadora: la diferencia absoluta entre ambos
+  resultados (en Bs o en la divisa, según la dirección), con flecha verde en la
+  tasa que rinde más y roja en la que rinde menos.
 
 ### Changed
 

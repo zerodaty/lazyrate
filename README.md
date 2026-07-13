@@ -40,8 +40,10 @@ Y lo muestra en dos lugares:
    del día en color; y cuando el BCV ya publicó la tasa de mañana, las estadísticas
    la muestran como "Próxima". Junto a "Fuentes" hay una pestaña **Calculadora**
    (o tecla `=`): convierte un monto entre dos tasas a elegir —divisa→Bs o
-   Bs→divisa— y muestra el % de disparidad, mientras el panel derecho grafica esas
-   dos tasas superpuestas en el tiempo con sus estadísticas de brecha.
+   Bs→divisa— y muestra el % de disparidad y la **diferencia en cambio** (cuánto
+   ganas o pierdes entre una tasa y otra, con flecha verde/roja por tasa), mientras
+   el panel derecho grafica esas dos tasas superpuestas en el tiempo con sus
+   estadísticas de brecha.
 
 Además, `lazyrate backfill` importa el **histórico oficial del BCV del año completo**
 (desde el primer día hábil del año) a partir de los Excel trimestrales que publica el

@@ -8,6 +8,7 @@ derecho grafica en paralelo las dos tasas elegidas (lo hace ``LazyrateApp``).
 
 from __future__ import annotations
 
+from rich.text import Text
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import VerticalScroll
@@ -154,6 +155,46 @@ class CalculatorView(VerticalScroll):
         value = to_bs(amount, row.rate)
         return label, f"{format_rate(value, decimals)} Bs", value
 
+    @staticmethod
+    def _leg_short(source: str, currency: str) -> str:
+        return f"{'BCV' if source == 'bcv' else 'P2P'} {currency}"
+
+    def _diff_row(
+        self,
+        leg_a: tuple[str, str],
+        leg_b: tuple[str, str],
+        num_a: float,
+        num_b: float,
+        direction: str,
+    ) -> tuple[str, Text]:
+        """Diferencia absoluta entre ambos resultados: cuánto ganas/pierdes por tasa.
+
+        Cada leg lleva su flecha: ↑ verde la que rinde más, ↓ roja la que rinde
+        menos. La unidad sigue a la dirección: Bs en divisa→Bs; en Bs→divisa solo
+        se muestra si ambas legs comparten moneda (EUR vs USDT no tiene unidad común).
+        """
+        (src_a, cur_a), (src_b, cur_b) = leg_a, leg_b
+        if direction == "to_currency":
+            unit = f" {cur_a}" if cur_a == cur_b else ""
+        else:
+            unit = " Bs"
+
+        def marker(mine: float, other: float) -> tuple[str, str]:
+            if mine > other:
+                return "↑", "green"
+            if mine < other:
+                return "↓", "red"
+            return "→", "dim"
+
+        arrow_a, style_a = marker(num_a, num_b)
+        arrow_b, style_b = marker(num_b, num_a)
+        diff = format_rate(abs(num_b - num_a), self.cfg.general.decimals)
+        text = Text()
+        text.append(f"{arrow_a} {self._leg_short(src_a, cur_a)}", style=style_a)
+        text.append(f"  {diff}{unit}  ", style="bold")
+        text.append(f"{arrow_b} {self._leg_short(src_b, cur_b)}", style=style_b)
+        return "Dif. en cambio", text
+
     def _recompute(self) -> None:
         if not self._ready or not self.pairs:
             return
@@ -168,8 +209,9 @@ class CalculatorView(VerticalScroll):
         label_a, text_a, num_a = self._result_row(src_a, cur_a, amount, direction)
         label_b, text_b, num_b = self._result_row(src_b, cur_b, amount, direction)
 
-        rows = [(label_a, text_a), (label_b, text_b)]
+        rows: list[tuple[str, str | Text]] = [(label_a, text_a), (label_b, text_b)]
         if num_a is not None and num_b is not None:
+            rows.append(self._diff_row((src_a, cur_a), (src_b, cur_b), num_a, num_b, direction))
             gap = disparity_pct(num_a, num_b)
             rows.append(("Disparidad (B vs A)", format_pct(gap) if gap is not None else _EMPTY))
         self._last_copy = text_b if num_b is not None else None

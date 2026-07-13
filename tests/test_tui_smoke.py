@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 
 def _isolate_xdg(tmp_path, monkeypatch) -> None:
@@ -14,16 +14,20 @@ def _isolate_xdg(tmp_path, monkeypatch) -> None:
 
 
 def _seed_history() -> None:
+    """Histórico relativo a hoy: con fechas fijas, los datos envejecen y salen
+    de las ventanas de 30 días, rompiendo los tests solo por el paso del tiempo."""
     from lazyrate import store
-    from lazyrate.providers.base import Quote
+    from lazyrate.providers.base import Quote, today_caracas
 
-    start = date(2026, 6, 1)
+    today = today_caracas()
     fetched = datetime(2026, 6, 10, 12, 0, tzinfo=UTC)
+    # BCV: 10 días terminando hace 3 (100..109); Binance: 3 días terminando hace 3
     quotes = [
-        Quote("bcv", "USD", 100.0 + i, fetched, start + timedelta(days=i)) for i in range(10)
+        Quote("bcv", "USD", 100.0 + i, fetched, today - timedelta(days=12 - i))
+        for i in range(10)
     ]
     quotes += [
-        Quote("binance_p2p", "USDT", 112.0 + i, fetched, start + timedelta(days=7 + i))
+        Quote("binance_p2p", "USDT", 112.0 + i, fetched, today - timedelta(days=5 - i))
         for i in range(3)
     ]
     assert store.insert_quotes(quotes) == 13
@@ -119,6 +123,11 @@ def test_calculator_smoke(tmp_path, monkeypatch):
             assert "BCV · USD" in result.plain_text
             assert "Binance P2P · USDT" in result.plain_text
             assert "Disparidad" in result.plain_text
+            # Dif. en cambio: 100×109 (BCV) vs 100×114 (P2P) → pierde A, gana B, 500 Bs
+            assert "Dif. en cambio" in result.plain_text
+            assert "↓ BCV USD" in result.plain_text
+            assert "↑ P2P USDT" in result.plain_text
+            assert "500,00 Bs" in result.plain_text
 
             # Panel derecho: gráfica de comparación A vs B + estadísticas de brecha
             chart = app.query_one(RateChart)

@@ -76,11 +76,12 @@ class StatsPanel(Static):
         super().__init__(**kwargs)
         self.plain_text: str = ""
 
-    def update_stats(self, rows: list[tuple[str, str]]) -> None:
+    def update_stats(self, rows: list[tuple[str, str | Text]]) -> None:
         table = Table(show_header=False, box=None, padding=(0, 1), expand=False)
         table.add_column("métrica", style="bold", no_wrap=True)
         table.add_column("valor")
         for name, value in rows:
             table.add_row(name, value)
-        self.plain_text = "\n".join(f"{name}: {value}" for name, value in rows)
+        # str(Text) devuelve el texto plano, sin marcado de color
+        self.plain_text = "\n".join(f"{name}: {value!s}" for name, value in rows)
         self.update(table)
