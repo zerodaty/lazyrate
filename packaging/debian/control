@@ -14,7 +14,7 @@ Depends: python3 (>= 3.11),
          gir1.2-gtk-3.0,
          python3-xlrd,
          python3-tomli-w
-Recommends: gnome-terminal
+Recommends: gnome-terminal, wl-clipboard | xclip
 Description: BCV and Binance P2P exchange rates in the GNOME top bar
  lazyrate shows the official BCV exchange rate and the Binance P2P
  (USDT/VES) market rate for Venezuela directly in the GNOME top bar

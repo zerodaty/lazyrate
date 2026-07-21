@@ -9,7 +9,7 @@ derecho grafica en paralelo las dos tasas elegidas (lo hace ``LazyrateApp``).
 from __future__ import annotations
 
 from rich.text import Text
-from textual import on
+from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import VerticalScroll
 from textual.validation import Function
@@ -232,8 +232,25 @@ class CalculatorView(VerticalScroll):
     @on(Button.Pressed, "#btn-copy")
     def _on_copy(self) -> None:
         if self._last_copy:
-            self.app.copy_to_clipboard(self._last_copy)
-            self.notify(f"Copiado: {self._last_copy}", timeout=3)
+            self._copy_worker(self._last_copy)
+
+    @work(thread=True, exclusive=True)
+    def _copy_worker(self, text: str) -> None:
+        """Copia en un hilo: xclip/xsel pueden quedarse en primer plano y colgar la UI."""
+        from lazyrate import clipboard
+
+        if clipboard.copy(text):
+            self.app.call_from_thread(self.notify, f"Copiado: {text}", timeout=3)
+            return
+        # Sin herramienta del sistema: probar OSC 52 (kitty/wezterm/…) desde el hilo de UI
+        self.app.call_from_thread(self.app.copy_to_clipboard, text)
+        self.app.call_from_thread(
+            self.notify,
+            "Copiado por el terminal (si lo soporta). Para copia fiable instala"
+            " wl-clipboard (Wayland) o xclip (X11).",
+            severity="warning",
+            timeout=7,
+        )
 
     def on_unmount(self) -> None:
         if self.pairs and self._calc_snapshot() != self._initial:

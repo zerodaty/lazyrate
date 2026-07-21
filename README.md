@@ -178,6 +178,21 @@ Los datos se guardan en rutas XDG estándar: histórico en
 | `Tab`                 | Cambiar de panel                                                                                |
 | `↑`/`↓` o `j`/`k`     | Moverse por la lista                                                                            |
 
+## Copiar al portapapeles
+
+El botón "Copiar resultado" de la calculadora usa una herramienta del sistema para
+copiar de forma fiable, porque GNOME Terminal (y otros basados en VTE) ignoran el
+método por defecto de las TUI (OSC 52). El `.deb` ya la instala; con pipx, añádela
+según tu sesión:
+
+```bash
+sudo apt install wl-clipboard   # Wayland (GNOME/KDE modernos)
+sudo apt install xclip          # X11
+```
+
+Sin ninguna instalada, lazyrate intenta OSC 52 y avisa; funcionará solo si tu
+terminal lo soporta (kitty, WezTerm, etc.).
+
 ## Nota sobre el certificado SSL del BCV
 
 La web del BCV suele servir una cadena de certificados rota (falta el intermedio), por

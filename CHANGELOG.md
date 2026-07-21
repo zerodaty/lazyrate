@@ -35,6 +35,10 @@ versionado [SemVer](https://semver.org/lang/es/).
 - Las estadísticas ("Actual", variación, promedios) ya no saltan a la fecha valor
   futura cuando el BCV publica la tasa del día siguiente: lo vigente y lo próximo
   se muestran por separado.
+- "Copiar resultado" ahora copia de verdad: usa `wl-copy`/`xclip`/`xsel` del
+  sistema (GNOME Terminal ignora el OSC 52 que usan las TUI por defecto) y solo
+  cae a OSC 52 —avisando— si no hay ninguna. El `.deb` recomienda `wl-clipboard`
+  o `xclip`. El copiado corre en un hilo para no congelar la interfaz.
 
 ## [0.2.0] - 2026-07-05
 
